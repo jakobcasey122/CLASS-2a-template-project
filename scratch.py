@@ -17,7 +17,7 @@ print(sampleamount / pipeline.sample_rate)
 
 # task 3:
 t3samplewindow = 1024
-t3start = len(pipeline.signal) // 2
+t3start = len(pipeline.signal) // 2 # // means divide and round
 t3window = pipeline.signal[t3start:t3start + t3samplewindow]
 
 #peak and root mean square

@@ -33,7 +33,7 @@ def run_engine_only() -> None:
     """
     engine = ENGINE(width=WINDOW_WIDTH, height=WINDOW_HEIGHT, title=WINDOW_TITLE, target_fps=TARGET_FPS)
     engine.run(feature_source=lambda: {})
-
+    
 
 NOT_IMPLEMENTED_MESSAGE = "AudioPipeline not implemented yet -- running with a blank feature source."
 
