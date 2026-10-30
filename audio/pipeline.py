@@ -13,7 +13,6 @@ class AudioPipeline:
     def __init__(self, file_path: str, sample_rate: int = 22050) -> None:
         self.file_path = file_path
         self.sample_rate = sample_rate
-        # still a bit confused why i need to put these here and not in features
         self.window_size = 1024
         self.position = 0
 
@@ -43,6 +42,9 @@ class AudioPipeline:
         rms_value = np.sqrt(np.mean(window**2)) # root mean square
         self.position = self.position + self.window_size # move window to next position
 
-        return{"amplitude": rms_value} # amplitutude
+        print("rms: ", rms_value) # print amplitude value to console
+
+        
+        return{"rms": rms_value} # amplitutude
 
     
