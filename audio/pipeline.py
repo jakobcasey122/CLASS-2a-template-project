@@ -1,6 +1,9 @@
 import librosa
 import numpy as np
 
+# frequency is f = bin position * sample rate / window size
+# bin position = f * window size / sample rate
+
 class AudioPipeline:
     """Loads an audio file and extracts features from it, frame by frame.
 
@@ -15,6 +18,8 @@ class AudioPipeline:
         self.sample_rate = sample_rate
         self.window_size = 1024
         self.position = 0
+        self.bass_edge = round(250 * self.window_size / self.sample_rate) # setting edges and rounding for whole number
+        self.treble_edge = round(4000 * self.window_size / self.sample_rate)
 
     def load(self) -> np.ndarray:
         self.signal, _ = librosa.load(self.file_path, sr=self.sample_rate)
@@ -37,14 +42,27 @@ class AudioPipeline:
 
         # setting up the moving window, start is 0
         windowstart = self.position
-        window = self.signal[windowstart:windowstart + self.window_size] 
-
-        rms_value = np.sqrt(np.mean(window**2)) * 500 # root mean square
+        window = self.signal[windowstart:windowstart + self.window_size]
+        rms_value = np.sqrt(np.mean(window**2)) * 500 # amplitude from raw audio before split
         self.position = self.position + self.window_size # move window to next position
 
+        # hann and fft the window, lines 30-31 scratch2 23.10.26
+        hann_window = window * np.hanning(self.window_size)
+        magnitude = np.abs(np.fft.rfft(hann_window))
 
-        print("amplitude: ", rms_value) # print amplitude value to console
+        # seperate the bass, mid, and treble values from above
+        bass_magnitude = magnitude[1:self.bass_edge]
+        mid_magnitude = magnitude[self.bass_edge:self.treble_edge]
+        treble_magnitude = magnitude[self.treble_edge:]
 
-        return{"amplitude": rms_value} # amplitutude
+        # get a single number from these lists to give the engine
+        bass = np.average(bass_magnitude)
+        mid = np.average(mid_magnitude)
+        treble = np.average(treble_magnitude)
+
+        # centroid, lines 46 onwards scratch2 23.10.26 .item() gives me a usable number
+        centroid = librosa.feature.spectral_centroid(y=window, sr=self.sample_rate, n_fft=self.window_size, center=False).item()
+
+        return{"amplitude": rms_value, "bass": bass, "mid": mid, "treble": treble, "centroid": centroid}
 
     

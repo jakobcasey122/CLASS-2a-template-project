@@ -47,8 +47,20 @@ print("------------------")
 
 pipeline.position = 3087000
 inputarray = pipeline.signal[pipeline.position:pipeline.position + 1024] 
-# librosa does hanning for me
+# librosa does hanning for me https://librosa.org/doc/dev/api/generated/librosa.feature.spectral_centroid.html
 
 spectralcentroid = librosa.feature.spectral_centroid(y=inputarray, sr=pipeline.sample_rate, n_fft=1024, center=False)
 
-print(spectralcentroid)
+print("Loud part spectralcentroid " + str(spectralcentroid))
+
+# now the sparse section
+
+pipeline.position = 20480
+inputarray = pipeline.signal[pipeline.position:pipeline.position + 1024]
+
+spectralcentroid = librosa.feature.spectral_centroid(y=inputarray, sr=pipeline.sample_rate, n_fft=1024, center=False)
+
+print("Sparse part spectralcentroid " + str(spectralcentroid))
+
+# the sparse part is higher than the loud part
+# bass pulls the average down during the loud part
