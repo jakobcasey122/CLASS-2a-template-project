@@ -20,6 +20,7 @@ class AudioPipeline:
         self.position = 0
         self.bass_edge = round(250 * self.window_size / self.sample_rate) # setting edges and rounding for whole number
         self.treble_edge = round(4000 * self.window_size / self.sample_rate)
+        self.previous_magnitude = np.zeros(self.window_size // 2 + 1) # a list of 513 zeros to store the previous magnitude
 
     def load(self) -> np.ndarray:
         self.signal, _ = librosa.load(self.file_path, sr=self.sample_rate)
@@ -60,9 +61,24 @@ class AudioPipeline:
         mid = np.average(mid_magnitude)
         treble = np.average(treble_magnitude)
 
-        # centroid, lines 46 onwards scratch2 23.10.26 .item() gives me a usable number
+        # centroid, lines 46 onwards scratch2 23.10.26 .item() gives a usable number
         centroid = librosa.feature.spectral_centroid(y=window, sr=self.sample_rate, n_fft=self.window_size, center=False).item()
 
-        return{"amplitude": rms_value, "bass": bass, "mid": mid, "treble": treble, "centroid": centroid}
+        # onset / spectral flux
+        spectral_flux = np.maximum(magnitude - self.previous_magnitude, 0) # changes negatives to 0, to ignore fading sound
+        self.previous_magnitude = magnitude # update magnitude 
+        onset = np.sum(spectral_flux) # add up spectral flux to get onset
+
+        
+        
+
+        return{
+            "amplitude": rms_value, 
+            "bass": bass, 
+            "mid": mid, 
+            "treble": treble, 
+            "centroid": centroid, 
+            "onset": onset
+        }
 
     
