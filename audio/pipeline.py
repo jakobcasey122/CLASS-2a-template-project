@@ -44,7 +44,7 @@ class AudioPipeline:
         # setting up the moving window, start is 0
         windowstart = self.position
         window = self.signal[windowstart:windowstart + self.window_size]
-        rms_value = np.sqrt(np.mean(window**2)) * 500 # amplitude from raw audio before split
+        rms_value = np.sqrt(np.mean(window**2)) # amplitude from raw audio before split
         self.position = self.position + self.window_size # move window to next position
 
         # hann and fft the window, lines 30-31 scratch2 23.10.26
@@ -69,7 +69,7 @@ class AudioPipeline:
         self.previous_magnitude = magnitude # update magnitude 
         onset = np.sum(spectral_flux) # add up spectral flux to get onset
 
-        
+
         
 
         return{
