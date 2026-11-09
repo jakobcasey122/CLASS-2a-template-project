@@ -44,7 +44,7 @@ class PygameEngine(BaseEngine): # these are values to be stored in by update and
         if USE_DELTA_TIME == True:
             dt = self.clock.tick(self.target_fps) / 1000.0 # real time frames
         else:
-            dt = 1.0 / self.target_fps # every frame takes the same time
+            dt = 1 / self.target_fps # every frame takes the same time
             if self.dt_warning == False: # a print warning incase i forgor to turn on dt
                 print("WARNING: DT is off")
                 self.dt_warning = True
@@ -55,6 +55,10 @@ class PygameEngine(BaseEngine): # these are values to be stored in by update and
 
         self.amplitude_radius = 100 + (2700 * self.features.get("amplitude", 0)) # 2700 is my scaler for amplitutude 
         self.position_x = self.position_x + (self.circle_speed * dt) # means the circle will move the same speed no matter the frame rate
+        if self.position_x > self.width: # if the circle hits the right border
+            self.circle_speed = -120
+        elif self.position_x < 0: # if the circle hits the left border
+            self.circle_speed = 120
 
         # self.frame_count = self.frame_count + 1
         # self.time_total = self.time_total + dt
