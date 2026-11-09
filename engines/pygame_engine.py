@@ -48,16 +48,15 @@ class PygameEngine(BaseEngine): # these are values to be stored in by update and
             if self.dt_warning == False: # a print warning incase i forgor to turn on dt
                 print("WARNING: DT is off")
                 self.dt_warning = True
-
-
         if dt >= self.max_dt: # set dt back to 0.1 if it goes over
             dt = self.max_dt
 
         self.amplitude_radius = 100 + (2700 * self.features.get("amplitude", 0)) # 2700 is my scaler for amplitutude 
+        
         self.position_x = self.position_x + (self.circle_speed * dt) # means the circle will move the same speed no matter the frame rate
-        if self.position_x > self.width: # if the circle hits the right border
+        if self.position_x > self.width - 100: # if the circle hits the right border
             self.circle_speed = -120
-        elif self.position_x < 0: # if the circle hits the left border
+        elif self.position_x < 0 + 100: # if the circle hits the left border
             self.circle_speed = 120
 
         # self.frame_count = self.frame_count + 1
