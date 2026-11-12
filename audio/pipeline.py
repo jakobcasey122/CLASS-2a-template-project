@@ -69,9 +69,6 @@ class AudioPipeline:
         self.previous_magnitude = magnitude # update magnitude 
         onset = np.sum(spectral_flux) # add up spectral flux to get onset
 
-
-        
-
         return{
             "amplitude": rms_value, 
             "bass": bass, 
