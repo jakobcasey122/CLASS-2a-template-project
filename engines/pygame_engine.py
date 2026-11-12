@@ -12,18 +12,28 @@ pipeline.load()
 
 USE_DELTA_TIME = True 
 
-class PygameEngine(BaseEngine): # these are values to be stored in by update and used in render
-    def setup(self) -> None:
+class PygameEngine(BaseEngine): 
+    def setup(self) -> None: # these are values to be stored in by update and used in render
         pygame.init()
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption(self.title)
         self.clock = pygame.time.Clock()
+
         self.features = {}
-        self.position_x = 640
-        self.position_y = 360
+        self.amp_position_x = 640
+        self.amp_position_y = 360
         self.amplitude_radius = 100
         self.circle_speed = 120 
 
+        # buttons
+        self.button_left = pygame.Rect(700, 900, 250, 150)
+        self.button_right = pygame.Rect(1000, 900, 250, 150)
+        # button text
+        self.button_font = pygame.font.Font(None, 40) # loads font (none is pygame default)
+        self.button_left_text = self.button_font.render("Left", True, (0, 0, 0)) # text to image
+        self.button_right_text = self.button_font.render("Right", True, (0, 0, 0))
+
+        # dt
         self.dt_warning = False
         self.max_dt = 0.1 # stops the objects from teleporting 
 
@@ -53,10 +63,10 @@ class PygameEngine(BaseEngine): # these are values to be stored in by update and
 
         self.amplitude_radius = 100 + (2700 * self.features.get("amplitude", 0)) # 2700 is my scaler for amplitutude 
         
-        self.position_x = self.position_x + (self.circle_speed * dt) # means the circle will move the same speed no matter the frame rate
-        if self.position_x > self.width - 100: # if the circle hits the right border
+        self.amp_position_x = self.amp_position_x + (self.circle_speed * dt) # means the circle will move the same speed no matter the frame rate
+        if self.amp_position_x > self.width - self.amplitude_radius: # if the circle hits the right border
             self.circle_speed = -120
-        elif self.position_x < 0 + 100: # if the circle hits the left border
+        elif self.amp_position_x < 0 + self.amplitude_radius: # if the circle hits the left border
             self.circle_speed = 120
 
         # self.frame_count = self.frame_count + 1
@@ -72,8 +82,13 @@ class PygameEngine(BaseEngine): # these are values to be stored in by update and
 
     def render(self) -> None: # draw stuff every frame
         self.screen.fill(BACKGROUND_COLOR)
-        pygame.gfxdraw.circle(self.screen, int(self.position_x), int(self.position_y), int(self.amplitude_radius), (255, 0, 0))
+        pygame.gfxdraw.circle(self.screen, int(self.amp_position_x), int(self.amp_position_y), int(self.amplitude_radius), (255, 0, 0))
+        pygame.gfxdraw.box(self.screen, self.button_left, (255, 255, 0)) # draw button box
+        pygame.gfxdraw.box(self.screen, self.button_right, (255, 255, 0))
+        self.screen.blit(self.button_left_text, (self.button_left.x + 75, self.button_left.y + 50)) # draw button text
+        self.screen.blit(self.button_right_text, (self.button_right.x + 75, self.button_right.y + 50))
         pygame.display.flip()
+        
 
     def teardown(self) -> None:
         pygame.quit()
