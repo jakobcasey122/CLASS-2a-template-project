@@ -18,6 +18,8 @@ class PygameEngine(BaseEngine):
         pygame.init()
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption(self.title)
+
+        self.mouse_pos = (0, 0)
         self.clock = pygame.time.Clock()
 
         # feature storage
@@ -52,6 +54,29 @@ class PygameEngine(BaseEngine):
         self.centroid_width_share = 0
         self.onset_width_share = 0
 
+        # smoothing is 1 - math.exp(-rate * delta_time)
+        self.smoothing_rate = 6
+        self.smooth_bass = self.width / 2 # the bars slide away from the middle, where they would be on frame 0
+        self.smooth_treble = self.width / 2
+        self.smooth_mid = self.width / 2
+        self.smooth_centroid = self.width / 2
+        self.smooth_onset = self.width / 2
+
+        # feature selection
+        self.bass_selection = 1
+        self.treble_selection = 2
+        self.mid_selection = 3
+        self.centroid_selection = 4
+        self.onset_selection = 5
+        self.selected_feature = 1
+
+        # feature default colours
+        self.bass_colour = pygame.color.Color("Red")
+        self.treble_colour = pygame.color.Color("Blue")
+        self.mid_colour = pygame.color.Color("Magenta")
+        self.centroid_colour = pygame.color.Color("Cyan")
+        self.onset_colour = pygame.color.Color("Yellow")
+
         # amplitude circle
         self.amp_position_x = 640
         self.amp_position_y = 360
@@ -61,6 +86,7 @@ class PygameEngine(BaseEngine):
         # buttons
         self.button_left = pygame.Rect(700, 900, 250, 150)
         self.button_right = pygame.Rect(1000, 900, 250, 150)
+        self.clicked = False
 
         # button text
         self.button_font = pygame.font.Font(None, 40) # loads font (none is pygame default)
@@ -70,14 +96,6 @@ class PygameEngine(BaseEngine):
         # dt
         self.dt_warning = False
         self.max_dt = 0.1 # stops the objects from teleporting
-
-        # smoothing is 1 - math.exp(-rate * delta_time)
-        self.smoothing_rate = 6
-        self.smooth_bass = self.width / 2 # the bars slide away from the middle, where they would be on frame 0
-        self.smooth_treble = self.width / 2
-        self.smooth_mid = self.width / 2
-        self.smooth_centroid = self.width / 2
-        self.smooth_onset = self.width / 2
 
         # self.dt_print = False
         # self.frame_count = 0
@@ -92,7 +110,50 @@ class PygameEngine(BaseEngine):
         return True
 
     def update(self, audio_features: dict) -> None: # update something every frame
-        self.features = audio_features
+        self.features = audio_features 
+
+        # mouse position
+        self.mouse_pos = pygame.mouse.get_pos()
+
+        # mouse collision and only allowing 1 click
+        if self.button_left.collidepoint(self.mouse_pos): # if they are hovering left button
+            if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+                self.selected_feature = self.selected_feature - 1
+                if self.selected_feature < 1: # left button on first feature goes to last feature
+                    self.selected_feature = 5
+                self.clicked = True
+        if self.button_right.collidepoint(self.mouse_pos): # if they are hovering right button
+            if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+                self.selected_feature = self.selected_feature + 1
+                if self.selected_feature > 5: # right button on last feature goes to first feature
+                    self.selected_feature = 1
+                self.clicked = True
+
+        # reset click
+        if pygame.mouse.get_pressed()[0] == 0:
+            self.clicked = False
+
+        # feature selection highlight
+        if self.selected_feature == 1:
+            self.bass_colour = pygame.color.Color("Azure")
+        else:
+            self.bass_colour = pygame.color.Color("Red")
+        if self.selected_feature == 2:
+            self.treble_colour = pygame.color.Color("Azure")
+        else:
+            self.treble_colour = pygame.color.Color("Blue")
+        if self.selected_feature == 3:
+            self.mid_colour = pygame.color.Color("Azure")
+        else:
+            self.mid_colour = pygame.color.Color("Magenta")
+        if self.selected_feature == 4:
+            self.centroid_colour = pygame.color.Color("Azure")
+        else:
+            self.centroid_colour = pygame.color.Color("Cyan")
+        if self.selected_feature == 5:
+            self.onset_colour = pygame.color.Color("Azure")
+        else:
+            self.onset_colour = pygame.color.Color("Yellow")
 
         # dt logic
         if USE_DELTA_TIME == True:
@@ -105,14 +166,14 @@ class PygameEngine(BaseEngine):
         if dt >= self.max_dt: # set dt back to 0.1 if it goes over
             dt = self.max_dt
 
-        # amplitutde circle movement & radius logic
-        self.amplitude_radius = 100 + (2700 * self.features.get("amplitude", 0)) # 2700 is my scaler for amplitutude 
+        # # amplitutde circle movement & radius logic
+        # self.amplitude_radius = 100 + (2700 * self.features.get("amplitude", 0)) # 2700 is my scaler for amplitutude 
 
-        self.amp_position_x = self.amp_position_x + (self.circle_speed * dt) # means the circle will move the same speed no matter the frame rate
-        if self.amp_position_x > self.width - self.amplitude_radius: # if the circle hits the right border
-            self.circle_speed = -120
-        elif self.amp_position_x < 0 + self.amplitude_radius: # if the circle hits the left border
-            self.circle_speed = 120
+        # self.amp_position_x = self.amp_position_x + (self.circle_speed * dt) # means the circle will move the same speed no matter the frame rate
+        # if self.amp_position_x > self.width - self.amplitude_radius: # if the circle hits the right border
+        #     self.circle_speed = -120
+        # elif self.amp_position_x < 0 + self.amplitude_radius: # if the circle hits the left border
+        #     self.circle_speed = 120
 
         # feature storage update
         if self.features.get("amplitude", 0) > self.biggest_amplitude: 
@@ -176,19 +237,19 @@ class PygameEngine(BaseEngine):
             self.centroid_width_share = self.centroid_normalised / self.total_share * self.width
             self.onset_width_share = self.onset_normalised / self.total_share * self.width
         else: # each rectangle gets an equal share of the screen if its 0 
-            self.bass_width_share = self.width / 5 # 2 is the number of features i've put into this logic
+            self.bass_width_share = self.width / 5 # 5 is the number of features i've put into this logic
             self.treble_width_share = self.width / 5
             self.mid_width_share = self.width / 5
             self.centroid_width_share = self.width / 5
             self.onset_width_share = self.width / 5
 
-        # smoothing        starting point                how far away it is                             smoothing equation
+        # smoothing        starting point                    how far away it is                        smoothing equation
         self.smooth_bass = self.smooth_bass + (self.bass_width_share - self.smooth_bass) * (1 - math.exp(-self.smoothing_rate * dt))
         self.smooth_treble = self.smooth_treble + (self.treble_width_share - self.smooth_treble) * (1 - math.exp(-self.smoothing_rate * dt))
         self.smooth_mid = self.smooth_mid + (self.mid_width_share - self.smooth_mid) * (1 - math.exp(-self.smoothing_rate * dt))
         self.smooth_centroid = self.smooth_centroid + (self.centroid_width_share - self.smooth_centroid) * (1 - math.exp(-self.smoothing_rate * dt))
         self.smooth_onset = self.smooth_onset + (self.onset_width_share - self.smooth_onset) * (1 - math.exp(-self.smoothing_rate * dt))
-        # it means where it is now + (where it wants to be - where it is now) then the smoothing equation
+        # it means where it is now + the gap between it and where it wants to be then the smoothing equation
 
        
        
@@ -219,14 +280,14 @@ class PygameEngine(BaseEngine):
 
     def render(self) -> None: # draw stuff every frame
         self.screen.fill(BACKGROUND_COLOR)
-        pygame.gfxdraw.circle(self.screen, int(self.amp_position_x), int(self.amp_position_y), int(self.amplitude_radius), (255, 0, 0))
+        # pygame.gfxdraw.circle(self.screen, int(self.amp_position_x), int(self.amp_position_y), int(self.amplitude_radius), (255, 0, 0))
 
         # screen share rectangles
-        pygame.gfxdraw.box(self.screen, pygame.Rect(0, 0, int(self.smooth_bass), self.height), (0, 255, 0)) # draw bass rectangle
-        pygame.gfxdraw.box(self.screen, pygame.Rect(int(self.smooth_bass), 0, int(self.smooth_treble), self.height), (0, 0, 255)) # draw treble rectangle directly after bass 
-        pygame.gfxdraw.box(self.screen, pygame.Rect(int(self.smooth_bass + self.smooth_treble), 0, int(self.smooth_mid), self.height), (255, 0, 255)) 
-        pygame.gfxdraw.box(self.screen, pygame.Rect(int(self.smooth_bass + self.smooth_treble + self.smooth_mid), 0, int(self.smooth_centroid), self.height), (0, 255, 255)) 
-        pygame.gfxdraw.box(self.screen, pygame.Rect(int(self.smooth_bass + self.smooth_treble + self.smooth_mid + self.smooth_centroid), 0, int(self.smooth_onset), self.height), (255, 255, 0))
+        pygame.gfxdraw.box(self.screen, pygame.Rect(0, 0, int(self.smooth_bass), self.height), self.bass_colour) # draw bass rectangle
+        pygame.gfxdraw.box(self.screen, pygame.Rect(int(self.smooth_bass), 0, int(self.smooth_treble), self.height), self.treble_colour) # draw treble rectangle directly after bass 
+        pygame.gfxdraw.box(self.screen, pygame.Rect(int(self.smooth_bass + self.smooth_treble), 0, int(self.smooth_mid), self.height), self.mid_colour) 
+        pygame.gfxdraw.box(self.screen, pygame.Rect(int(self.smooth_bass + self.smooth_treble + self.smooth_mid), 0, int(self.smooth_centroid), self.height), self.centroid_colour) 
+        pygame.gfxdraw.box(self.screen, pygame.Rect(int(self.smooth_bass + self.smooth_treble + self.smooth_mid + self.smooth_centroid), 0, int(self.smooth_onset), self.height), self.onset_colour)
 
         # buttons
         pygame.gfxdraw.box(self.screen, self.button_left, (255, 255, 0)) # draw button box
